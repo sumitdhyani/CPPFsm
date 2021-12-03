@@ -127,19 +127,16 @@ private:
 		//Us reaching here means that this is an unhandled event,
 		//we now need to check whether the current state is a composite state and if yes,
 		//then pass this event to its internal state machine
-		Transition next = SpecialTransitions::UnhandledEvt;
+		Transition transition = SpecialTransitions::UnhandledEvt;
 		try
 		{
-			if(isUnhandled(next))
-			{
-				auto& childStateMachine = dynamic_cast<IFSM&>(*m_currState);
-				next = childStateMachine.onEvent(evt);
-			}
+			auto& childStateMachine = dynamic_cast<IFSM&>(*m_currState);
+			transition = childStateMachine.onEvent(evt);
 		}
 		catch (std::bad_cast) {}
 		catch (FinalityReachedException) {}
 
-		return next;
+		return transition;
 	}
 
 	void handleStateEntry(State* state)
