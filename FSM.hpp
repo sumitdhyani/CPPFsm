@@ -20,6 +20,11 @@ struct NullStateException : std::runtime_error
 	NullStateException() : std::runtime_error("State can't be a nullptr return SpecialTransitions::NullTransition in case there is no state transition") {}
 };
 
+struct SMInactiveException : std::runtime_error
+{
+	SMInactiveException() : std::runtime_error("State machine needs to be started by calling the start() method") {}
+};
+
 struct State
 {
 	State(bool isFinal) : m_isFinal(isFinal)
@@ -27,6 +32,7 @@ struct State
 	virtual void onEntry() {};
 	virtual void beforeExit() {};
 	bool isFinal(){	return m_isFinal; }
+	virtual ~State() {}
 private:
 	bool m_isFinal;
 };
@@ -41,13 +47,15 @@ struct IEventProcessor
 
 struct IFSM
 {
-	IFSM(std::function<State* ()> fn) : m_currState(fn()) {}
+	IFSM(std::function<State* ()> fn) : m_currState(fn()), m_started(false) {}
 	
 	template<typename EventType>
 	
 	Transition onEvent(const EventType& evt)
 	{
-		if (m_currState->isFinal())
+		if (!m_started)
+			throw SMInactiveException();
+		else if (m_currState->isFinal())
 			throw FinalityReachedException();
 
 		auto transition = findNextState(evt);
@@ -59,6 +67,7 @@ struct IFSM
 			auto nextState = std::get<State*>(transition);
 			if (!nextState)
 				throw NullStateException();
+			delete m_currState;
 			m_currState = nextState;
 			handleStateEntry(m_currState);
 		}
@@ -68,14 +77,18 @@ struct IFSM
 
 	void start()
 	{
+		m_started = true;
 		if (m_currState->isFinal())
 			throw FinalityReachedException();
 		else
 			handleStateEntry(m_currState);
 	}
 
+	virtual ~IFSM() { delete m_currState; }
+
 private:
 	State* m_currState;
+	bool m_started;
 
 	bool isUnhandled(const Transition& transition)
 	{
@@ -117,7 +130,7 @@ private:
 		Transition next = SpecialTransitions::UnhandledEvt;
 		try
 		{
-			while (isUnhandled(next))
+			if(isUnhandled(next))
 			{
 				auto& childStateMachine = dynamic_cast<IFSM&>(*m_currState);
 				next = childStateMachine.onEvent(evt);
@@ -150,7 +163,6 @@ private:
 		catch (std::bad_cast) {}
 
 		state->beforeExit();
-		delete m_currState;
 	}
 
 	template<typename EventType>
@@ -162,3 +174,7 @@ private:
 	virtual void handleUnconsumedEvent(std::string desc) noexcept {}
 };
 
+struct CompositeState : IFSM, State
+{
+	CompositeState(std::function<State* ()> fn) : IFSM(fn), State(false) {}
+};

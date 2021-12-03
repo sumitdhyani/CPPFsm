@@ -22,9 +22,9 @@ struct EvtLap : EvtBase
     EvtLap() : EvtBase("Lap") {}
 };
 
-struct Stopped : State, IEventProcessor<EvtStart>, IEventProcessor<EvtSwitchOff>
+struct Stopped : StateBase, IEventProcessor<EvtStart>, IEventProcessor<EvtSwitchOff>
 {
-	Stopped() : State(false) {}
+	Stopped() : StateBase(false) {}
 
     virtual void onEntry()
     {
@@ -40,9 +40,9 @@ struct Stopped : State, IEventProcessor<EvtStart>, IEventProcessor<EvtSwitchOff>
     virtual Transition process(const EvtSwitchOff& evt);
 };
 
-struct Running: State, IEventProcessor<EvtStop>, IEventProcessor<EvtSwitchOff>, IEventProcessor<EvtLap>
+struct Running: StateBase, IEventProcessor<EvtStop>, IEventProcessor<EvtSwitchOff>, IEventProcessor<EvtLap>
 {
-	Running() : State(false), m_lap(0), m_initTime(std::chrono::system_clock::now()) {}
+	Running() : StateBase(false), m_lap(0), m_initTime(std::chrono::system_clock::now()) {}
 
     virtual void onEntry()
     {
@@ -63,9 +63,9 @@ private:
 };
 
 
-struct SwitchedOff : State
+struct SwitchedOff : StateBase
 {
-	SwitchedOff() : State(true) {}
+	SwitchedOff() : StateBase(true) {}
 
     virtual void onEntry()
     {

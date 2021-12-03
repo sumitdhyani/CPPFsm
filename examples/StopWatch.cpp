@@ -1,4 +1,5 @@
 #include "StopWatch.h"
+#include <thread>
 
 Transition Stopped::process(const EvtStart& evt)
 {
@@ -26,3 +27,35 @@ Transition Running::process(const EvtSwitchOff& evt)
 {
 	return new SwitchedOff();
 }
+
+int main(int argc, char** argv)
+{
+	StopWatch stopWatch;
+    stopWatch.start();
+    int sleepInterval = 1;
+    try
+    {
+        std::this_thread::sleep_for(std::chrono::seconds(sleepInterval));
+        stopWatch.onEvent(EvtStart());
+
+        std::this_thread::sleep_for(std::chrono::seconds(sleepInterval));
+        stopWatch.onEvent(EvtLap());
+
+        std::this_thread::sleep_for(std::chrono::seconds(sleepInterval));
+        stopWatch.onEvent(EvtLap());
+
+        std::this_thread::sleep_for(std::chrono::seconds(sleepInterval));
+        stopWatch.onEvent(EvtStop());
+
+        std::this_thread::sleep_for(std::chrono::seconds(sleepInterval));
+        stopWatch.onEvent(EvtSwitchOff());
+        stopWatch.onEvent(EvtSwitchOff());
+    }
+    catch (const FinalityReachedException& ex)
+    {
+        std::cout << ex.what() << std::endl;
+    }
+
+	return 0;
+}
+
