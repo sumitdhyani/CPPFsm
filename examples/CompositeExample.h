@@ -75,8 +75,3 @@ struct STerminated : StateBase
 {
 	STerminated() : StateBase(true) {}
 };
-
-struct CompositeSM : IFSM
-{
-	CompositeSM() : IFSM([]() {return new SC1(); }) {}
-};

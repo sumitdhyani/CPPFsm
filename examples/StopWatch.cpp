@@ -30,7 +30,7 @@ Transition Running::process(const EvtSwitchOff& evt)
 
 int main(int argc, char** argv)
 {
-	StopWatch stopWatch;
+    FSM stopWatch([]() {return new Stopped(); });
     stopWatch.start();
     int sleepInterval = 1;
     try

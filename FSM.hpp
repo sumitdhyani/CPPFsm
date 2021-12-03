@@ -45,9 +45,9 @@ struct IEventProcessor
 	virtual Transition process(const EvtType& arg) = 0;
 };
 
-struct IFSM
+struct FSM
 {
-	IFSM(std::function<State* ()> fn) : m_currState(fn()), m_started(false) {}
+	FSM(std::function<State* ()> fn) : m_currState(fn()), m_started(false) {}
 	
 	template<typename EventType>
 	
@@ -84,7 +84,7 @@ struct IFSM
 			handleStateEntry(m_currState);
 	}
 
-	virtual ~IFSM() { delete m_currState; }
+	virtual ~FSM() { delete m_currState; }
 
 private:
 	State* m_currState;
@@ -130,7 +130,7 @@ private:
 		Transition transition = SpecialTransitions::UnhandledEvt;
 		try
 		{
-			auto& childStateMachine = dynamic_cast<IFSM&>(*m_currState);
+			auto& childStateMachine = dynamic_cast<FSM&>(*m_currState);
 			transition = childStateMachine.onEvent(evt);
 		}
 		catch (std::bad_cast) {}
@@ -144,7 +144,7 @@ private:
 		state->onEntry();
 		try
 		{
-			auto& childStateMachine = dynamic_cast<IFSM&>(*state);
+			auto& childStateMachine = dynamic_cast<FSM&>(*state);
 			childStateMachine.start();
 		}
 		catch (std::bad_cast) {}
@@ -154,7 +154,7 @@ private:
 	{
 		try
 		{
-			auto& childStateMachine = dynamic_cast<IFSM&>(*state);
+			auto& childStateMachine = dynamic_cast<FSM&>(*state);
 			handleStateExit(childStateMachine.m_currState);
 		}
 		catch (std::bad_cast) {}
@@ -171,7 +171,7 @@ private:
 	virtual void handleUnconsumedEvent(std::string desc) noexcept {}
 };
 
-struct CompositeState : IFSM, State
+struct CompositeState : FSM, State
 {
-	CompositeState(std::function<State* ()> fn) : IFSM(fn), State(false) {}
+	CompositeState(std::function<State* ()> fn) : FSM(fn), State(false) {}
 };

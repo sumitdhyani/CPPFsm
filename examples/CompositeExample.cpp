@@ -27,7 +27,7 @@ Transition SC21::process(const e22& evt)
 
 int main(int argc, char** argv)
 {
-	CompositeSM fsm;
+	FSM fsm([]() { return new SC1(); });
 	fsm.start();
 	try
 	{

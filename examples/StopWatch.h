@@ -72,13 +72,3 @@ struct SwitchedOff : StateBase
         std::cout << "Stopwatch switchedOff state at: " << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()) << std::endl;
     }
 };
-
-struct StopWatch : IFSM
-{
-    StopWatch() : IFSM([]() {return new Stopped(); }) {}
-
-	virtual void handleUnconsumedEvent(std::string desc) noexcept
-	{
-        std::cout << "Unhandled evt: " << desc << std::endl;
-	}
-};
