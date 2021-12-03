@@ -1,22 +1,6 @@
 #pragma once
-#include <iostream>
-#include <string>
-#include <chrono>
-#include <ctime>  
-#include <FSM.hpp>
+#include "Common.h"
 
-struct EvtBase
-{
-    EvtBase(std::string name) : m_name(name) {}
-
-    std::string description()
-    {
-        return m_name;
-    }
-
-private:
-    std::string m_name;
-};
 
 struct EvtStart : EvtBase
 {
@@ -52,8 +36,8 @@ struct Stopped : State, IEventProcessor<EvtStart>, IEventProcessor<EvtSwitchOff>
         std::cout << "Stopwatch leaving stopped state at: " << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()) << std::endl;
     }
 
-    virtual State* process(const EvtStart& evt);
-    virtual State* process(const EvtSwitchOff& evt);
+    virtual Transition process(const EvtStart& evt);
+    virtual Transition process(const EvtSwitchOff& evt);
 };
 
 struct Running: State, IEventProcessor<EvtStop>, IEventProcessor<EvtSwitchOff>, IEventProcessor<EvtLap>
@@ -70,9 +54,9 @@ struct Running: State, IEventProcessor<EvtStop>, IEventProcessor<EvtSwitchOff>, 
         std::cout << "Stopwatch leaving running state at: " << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()) << std::endl;
     }
 
-    virtual State* process(const EvtStop& evt);
-    virtual State* process(const EvtSwitchOff& evt);
-    virtual State* process(const EvtLap& evt);
+    virtual Transition process(const EvtStop& evt);
+    virtual Transition process(const EvtSwitchOff& evt);
+    virtual Transition process(const EvtLap& evt);
 private:
     int m_lap;
     std::chrono::time_point<std::chrono::system_clock> m_initTime;
