@@ -152,5 +152,7 @@ private:
 
 struct CompositeState : FSM, State
 {
-	CompositeState(std::function<State* ()> fn) : FSM(fn), State(false) {}
+	CompositeState(	std::function<State* ()> fn, 
+					std::function<void(State*)> deleter = [](State* state) {delete state; }
+		) : FSM(fn, deleter), State(false) {}
 };
