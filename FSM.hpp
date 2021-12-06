@@ -39,7 +39,10 @@ struct IEventProcessor
 
 struct FSM
 {
-	FSM(std::function<State*()> fn) : m_currState(fn()), m_started(false) {}
+	FSM(std::function<State* ()> fn, 
+		std::function<void(State*)> deleter = [](State* state) {delete state; }
+		) : m_currState(fn()), m_deleter(deleter), m_started(false)
+	{}
 	
 	template<typename EventType>
 	void handleEvent(const EventType& evt)
@@ -56,7 +59,7 @@ struct FSM
 			handleStateEntry(m_currState);
 	}
 
-	virtual ~FSM() { delete m_currState; }
+	virtual ~FSM() { m_deleter(m_currState); }
 
 	virtual void handleUnconsumedEvent(std::string desc) noexcept {}
 
@@ -65,6 +68,7 @@ private:
 	inline static State* unhandledTransition = reinterpret_cast<State*>(1);
 	State* m_currState;
 	bool m_started;
+	std::function<void(State*)> m_deleter;
 
 	template<typename EventType>
 	State* onEvent(const EventType& evt)
@@ -80,7 +84,7 @@ private:
 		else if (nullptr != transition)
 		{
 			handleStateExit(m_currState);
-			delete m_currState;
+			m_deleter(m_currState);
 			m_currState = transition;
 			handleStateEntry(m_currState);
 		}
