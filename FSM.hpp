@@ -39,7 +39,7 @@ struct IEventProcessor
 
 struct FSM
 {
-	FSM(std::function<State* ()> fn) : m_currState(fn()), m_started(false) {}
+	FSM(std::function<State*()> fn) : m_currState(fn()), m_started(false) {}
 	
 	template<typename EventType>
 	void handleEvent(const EventType& evt)
@@ -61,7 +61,8 @@ struct FSM
 	virtual void handleUnconsumedEvent(std::string desc) noexcept {}
 
 private:
-	inline static State* m_unhandledTransition = reinterpret_cast<State*>(1);
+
+	inline static State* unhandledTransition = reinterpret_cast<State*>(1);
 	State* m_currState;
 	bool m_started;
 
@@ -74,9 +75,9 @@ private:
 			throw FinalityReachedException();
 
 		auto transition = findNextState(evt);
-		if (isUnhandled(transition))
+		if (unhandledTransition == transition)
 			onUnconsumedEvent(evt);
-		else if (!isNullTransition(transition))
+		else if (nullptr != transition)
 		{
 			handleStateExit(m_currState);
 			delete m_currState;
@@ -85,16 +86,6 @@ private:
 		}
 
 		return transition;
-	}
-
-	bool isUnhandled(const State* transition)
-	{
-		return m_unhandledTransition == transition;
-	}
-
-	bool isNullTransition(const State* transition)
-	{
-		return nullptr == transition;
 	}
 	
 	template<typename EventType>
@@ -110,7 +101,7 @@ private:
 		//Us reaching here means that this is an unhandled event,
 		//we now need to check whether the current state is a composite state and if yes,
 		//then pass this event to its internal state machine
-		State* transition = m_unhandledTransition;
+		State* transition = unhandledTransition;
 		try
 		{
 			auto& childStateMachine = dynamic_cast<FSM&>(*m_currState);
@@ -119,7 +110,7 @@ private:
 		catch (std::bad_cast) {}
 		catch (FinalityReachedException) {}
 
-		if (!isUnhandled(transition))
+		if (unhandledTransition != transition)
 			return nullptr;
 		else
 			return transition;
@@ -153,7 +144,6 @@ private:
 	{
 		handleUnconsumedEvent(evt.description());
 	}
-
 };
 
 struct CompositeState : FSM, State
