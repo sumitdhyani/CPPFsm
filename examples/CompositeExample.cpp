@@ -1,30 +1,30 @@
 #include "CompositeExample.h"
 
-Transition SC1::process(const e1& evt)
+State* SC1::process(const e1& evt)
 {
 	std::cout << "Recieved evt: " << evt.description() << std::endl;
 	return new SC2();
 }
 
-Transition SC2::process(const e2& evt)
+State* SC2::process(const e2& evt)
 {
 	std::cout << "Recieved evt: " << evt.description() << std::endl;
 	return new SC1();
 }
 
-Transition SC2::process(const eTerminate& evt)
+State* SC2::process(const eTerminate& evt)
 {
 	std::cout << "Recieved evt: " << evt.description() << std::endl;
 	return new STerminated();
 }
 
-Transition SC11::process(const e11& evt)
+State* SC11::process(const e11& evt)
 {
 	std::cout << "Recieved evt: " << evt.description() << std::endl;
 	return new SC12();
 }
 
-Transition SC21::process(const e21& evt)
+State* SC21::process(const e21& evt)
 {
 	std::cout << "Recieved evt: " << evt.description() << std::endl;
 	return new SC22();
@@ -46,15 +46,15 @@ int main(int argc, char** argv)
 	fsm.start();
 	try
 	{
-		fsm.onEvent(e1());
-		fsm.onEvent(e2());
-		fsm.onEvent(e11());
-		fsm.onEvent(e12());
-		fsm.onEvent(e1());
-		fsm.onEvent(e21());
-		fsm.onEvent(eTerminate());
+		fsm.handleEvent(e1());
+		fsm.handleEvent(e2());
+		fsm.handleEvent(e11());
+		fsm.handleEvent(e12());
+		fsm.handleEvent(e1());
+		fsm.handleEvent(e21());
+		fsm.handleEvent(eTerminate());
 		//Exception should be thrown here as we have reached finality here
-		fsm.onEvent(e2());
+		fsm.handleEvent(e2());
 	}
 	catch (const FinalityReachedException& ex)
 	{

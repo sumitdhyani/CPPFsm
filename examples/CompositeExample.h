@@ -18,7 +18,7 @@ struct e22 : EvtBase {};
 struct SC11 : StateBase , IEventProcessor<e11>
 {
 	SC11() : StateBase(false) {}
-	virtual Transition process(const e11& evt);
+	virtual State* process(const e11& evt);
 };
 
 struct SC12 : StateBase 
@@ -29,7 +29,7 @@ struct SC12 : StateBase
 struct SC21 : StateBase, IEventProcessor<e21> 
 {
 	SC21() : StateBase(false) {}
-	virtual Transition process(const e21& evt);
+	virtual State* process(const e21& evt);
 };
 
 struct SC22 : StateBase
@@ -40,14 +40,14 @@ struct SC22 : StateBase
 struct SC1 : CompositeStateBase, IEventProcessor<e1> 
 {
 	SC1() : CompositeStateBase([]() {return new SC11();}) {}
-	virtual Transition process(const e1& evt);
+	virtual State* process(const e1& evt);
 };
 
 struct SC2 : CompositeStateBase, IEventProcessor<e2>, IEventProcessor<eTerminate>
 {
 	SC2() : CompositeStateBase([]() {return new SC21();}) {}
-	virtual Transition process(const e2& evt);
-	virtual Transition process(const eTerminate& evt);
+	virtual State* process(const e2& evt);
+	virtual State* process(const eTerminate& evt);
 };
 
 struct STerminated : StateBase

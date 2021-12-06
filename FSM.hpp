@@ -4,12 +4,6 @@
 #include <stack>
 #include <variant>
 
-enum class SpecialTransitions
-{
-	UnhandledEvt,
-	NullTransition
-};
-
 struct FinalityReachedException : std::runtime_error
 {
 	FinalityReachedException() : std::runtime_error("State machine has reched final state and can't process any new events") {}
@@ -37,12 +31,10 @@ private:
 	bool m_isFinal;
 };
 
-typedef std::variant<State*, SpecialTransitions> Transition;
-
 template<typename EvtType>
 struct IEventProcessor
 {
-	virtual Transition process(const EvtType& arg) = 0;
+	virtual State* process(const EvtType& arg) = 0;
 };
 
 struct FSM
@@ -50,29 +42,9 @@ struct FSM
 	FSM(std::function<State* ()> fn) : m_currState(fn()), m_started(false) {}
 	
 	template<typename EventType>
-	
-	Transition onEvent(const EventType& evt)
+	void handleEvent(const EventType& evt)
 	{
-		if (!m_started)
-			throw SMInactiveException();
-		else if (m_currState->isFinal())
-			throw FinalityReachedException();
-
-		auto transition = findNextState(evt);
-		if (isUnhandled(transition))
-			onUnconsumedEvent(evt);
-		else if (!isNullTransition(transition))
-		{
-			handleStateExit(m_currState);
-			auto nextState = std::get<State*>(transition);
-			if (!nextState)
-				throw NullStateException();
-			delete m_currState;
-			m_currState = nextState;
-			handleStateEntry(m_currState);
-		}
-
-		return transition;
+		onEvent(evt);
 	}
 
 	void start()
@@ -89,35 +61,44 @@ struct FSM
 	virtual void handleUnconsumedEvent(std::string desc) noexcept {}
 
 private:
+	inline static State* m_unhandledTransition = reinterpret_cast<State*>(1);
 	State* m_currState;
 	bool m_started;
 
-	bool isUnhandled(const Transition& transition)
+	template<typename EventType>
+	State* onEvent(const EventType& evt)
 	{
-		try
+		if (!m_started)
+			throw SMInactiveException();
+		else if (m_currState->isFinal())
+			throw FinalityReachedException();
+
+		auto transition = findNextState(evt);
+		if (isUnhandled(transition))
+			onUnconsumedEvent(evt);
+		else if (!isNullTransition(transition))
 		{
-			return SpecialTransitions::UnhandledEvt == std::get<SpecialTransitions>(transition);
+			handleStateExit(m_currState);
+			delete m_currState;
+			m_currState = transition;
+			handleStateEntry(m_currState);
 		}
-		catch (std::bad_variant_access)
-		{
-			return false;
-		}
+
+		return transition;
 	}
 
-	bool isNullTransition(const Transition& transition)
+	bool isUnhandled(const State* transition)
 	{
-		try
-		{
-			return SpecialTransitions::NullTransition == std::get<SpecialTransitions>(transition);
-		}
-		catch (std::bad_variant_access)
-		{
-			return false;
-		}
+		return m_unhandledTransition == transition;
+	}
+
+	bool isNullTransition(const State* transition)
+	{
+		return nullptr == transition;
 	}
 	
 	template<typename EventType>
-	Transition findNextState(const EventType& evt)
+	State* findNextState(const EventType& evt)
 	{
 		try
 		{
@@ -129,7 +110,7 @@ private:
 		//Us reaching here means that this is an unhandled event,
 		//we now need to check whether the current state is a composite state and if yes,
 		//then pass this event to its internal state machine
-		Transition transition = SpecialTransitions::UnhandledEvt;
+		State* transition = m_unhandledTransition;
 		try
 		{
 			auto& childStateMachine = dynamic_cast<FSM&>(*m_currState);
@@ -139,8 +120,9 @@ private:
 		catch (FinalityReachedException) {}
 
 		if (!isUnhandled(transition))
-			return SpecialTransitions::NullTransition;
-		return transition;
+			return nullptr;
+		else
+			return transition;
 	}
 
 	void handleStateEntry(State* state)
