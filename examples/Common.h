@@ -9,11 +9,11 @@
 
 struct EvtBase
 {
-    EvtBase(std::string name) : m_name(name) {}
+    EvtBase() {}
 
-    std::string description() const
+    virtual std::string description() const
     {
-        return m_name;
+        return typeid(*this).name();
     }
 
 private:
@@ -41,11 +41,11 @@ struct CompositeStateBase : CompositeState
     
     virtual void onEntry()
 	{
-		std::cout << "Entered " << typeid(*this).name();
+		std::cout << "Entered " << typeid(*this).name() << std::endl;
 	}
 
     virtual void beforeExit()
 	{
-		std::cout << "Exiting " << typeid(*this).name();
+		std::cout << "Exiting " << typeid(*this).name() << std::endl;
 	}
 };

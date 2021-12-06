@@ -86,6 +86,8 @@ struct FSM
 
 	virtual ~FSM() { delete m_currState; }
 
+	virtual void handleUnconsumedEvent(std::string desc) noexcept {}
+
 private:
 	State* m_currState;
 	bool m_started;
@@ -136,6 +138,8 @@ private:
 		catch (std::bad_cast) {}
 		catch (FinalityReachedException) {}
 
+		if (!isUnhandled(transition))
+			return SpecialTransitions::NullTransition;
 		return transition;
 	}
 
@@ -168,7 +172,6 @@ private:
 		handleUnconsumedEvent(evt.description());
 	}
 
-	virtual void handleUnconsumedEvent(std::string desc) noexcept {}
 };
 
 struct CompositeState : FSM, State

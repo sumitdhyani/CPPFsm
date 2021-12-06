@@ -1,26 +1,13 @@
 #pragma once
 #include "Common.h"
 
+struct EvtStart : EvtBase {};
 
-struct EvtStart : EvtBase
-{
-    EvtStart() : EvtBase("Start") {}
-};
+struct EvtStop : EvtBase {};
 
-struct EvtStop: EvtBase
-{
-    EvtStop() : EvtBase("Stop") {}
-};
+struct EvtSwitchOff : EvtBase {};
 
-struct EvtSwitchOff : EvtBase
-{
-    EvtSwitchOff() : EvtBase("SwitchOff") {}
-};
-
-struct EvtLap : EvtBase
-{
-    EvtLap() : EvtBase("Lap") {}
-};
+struct EvtLap : EvtBase {};
 
 struct Stopped : StateBase, IEventProcessor<EvtStart>, IEventProcessor<EvtSwitchOff>
 {
