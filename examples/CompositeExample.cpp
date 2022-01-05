@@ -30,19 +30,9 @@ State* SC21::process(const e21& evt)
 	return new SC22();
 }
 
-struct LocalFSM : FSM
-{
-	LocalFSM(std::function<State* ()> fn) : FSM(fn) {}
-
-	virtual void handleUnconsumedEvent(std::string desc) noexcept
-	{
-		std::cout << "Recieved unhandled evt: " << desc << std::endl;
-	}
-};
-
 int main(int argc, char** argv)
 {
-	LocalFSM fsm([]() { return new SC1(); });
+	FSM fsm([]() { return new SC1(); }, [](std::string desc) { std::cout << "Recieved unhandled evt: " << desc << std::endl; } );
 	fsm.start();
 	try
 	{
