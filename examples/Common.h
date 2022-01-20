@@ -7,6 +7,11 @@
 #include <string>
 #include <typeinfo>
 
+//struct FSMBase : FSM
+//{
+//    std::string typeof(FSM);
+//};
+
 struct EvtBase
 {
     EvtBase() {}
@@ -49,3 +54,14 @@ struct CompositeStateBase : CompositeState
 		std::cout << "Exiting " << typeid(*this).name() << std::endl;
 	}
 };
+
+struct NonFinalState : StateBase
+{
+    NonFinalState() : StateBase(false) {}
+};
+
+struct FinalState : StateBase
+{
+    FinalState() : StateBase(true) {}
+};
+

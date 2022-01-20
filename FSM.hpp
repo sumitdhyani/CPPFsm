@@ -2,6 +2,7 @@
 #include <variant>
 #include <functional>
 #include <stack>
+#include <queue>
 #include <variant>
 
 struct FinalityReachedException : std::runtime_error
@@ -27,6 +28,8 @@ struct State
 	virtual void beforeExit() {};
 	bool isFinal(){	return m_isFinal; }
 	virtual ~State() {}
+protected:
+	inline static State* defer = reinterpret_cast<State*>(2);
 private:
 	bool m_isFinal;
 };
@@ -62,13 +65,16 @@ struct FSM
 
 	virtual ~FSM() { m_deleter(m_currState); }
 
+	inline static State* defer = reinterpret_cast<State*>(2);
+protected:
+	State* m_currState;
 private:
 
 	inline static State* unhandledTransition = reinterpret_cast<State*>(1);
-	State* m_currState;
 	bool m_started;
 	std::function<void(std::string)> m_unconsumedEventHandler;
 	std::function<void(State*)> m_deleter;
+	std::queue<std::function<void()>> m_deferralQueue;
 
 	template<typename EventType>
 	State* onEvent(const EventType& evt)
@@ -81,6 +87,8 @@ private:
 		auto transition = findNextState(evt);
 		if (unhandledTransition == transition)
 			onUnconsumedEvent(evt);
+		else if (defer == transition)
+			m_deferralQueue.push([this, evt]() { handleEvent(evt); });
 		else if (nullptr != transition)
 		{
 			handleStateExit(m_currState);
@@ -90,6 +98,18 @@ private:
 		}
 
 		return transition;
+	}
+
+	void processDeferralQueue()
+	{
+		std::queue<std::function<void()>> local;
+		local.swap(m_deferralQueue);
+		
+		while (!local.empty())
+		{
+			local.front()();
+			local.pop();
+		}
 	}
 	
 	template<typename EventType>
@@ -129,6 +149,7 @@ private:
 			childStateMachine.start();
 		}
 		catch (std::bad_cast) {}
+		processDeferralQueue();
 	}
 
 	void handleStateExit(State* state)
