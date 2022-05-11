@@ -1,9 +1,6 @@
 #include <memory>
-#include <variant>
 #include <functional>
-#include <stack>
 #include <queue>
-#include <variant>
 
 struct FinalityReachedException : std::runtime_error
 {
@@ -135,9 +132,9 @@ private:
 		catch (FinalityReachedException) {}
 
 		if (unhandledTransition != transition)
-			return nullptr;
-		else
-			return transition;
+			transition = nullptr;
+		
+		return transition;
 	}
 
 	void handleStateEntry(State* state)
@@ -176,5 +173,6 @@ struct CompositeState : FSM, State
 	CompositeState(	std::function<State* ()> fn, 
 					std::function<void(std::string)> unconsumedEventHandler = [](std::string desc) {},
 					std::function<void(State*)> deleter = [](State* state) {delete state; }
-		) : FSM(fn, unconsumedEventHandler, deleter), State(false) {}
+				   ) : FSM(fn, unconsumedEventHandler, deleter), State(false)
+	{}
 };

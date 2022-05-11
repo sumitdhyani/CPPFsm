@@ -35,14 +35,14 @@ A composite state can't be final.
 The Composite State is represented by a subclass of CompositeState class is.
 Since it is also a StateMachine, it requires a function/functor/lambda which shuould return a State* pointer.
 This State* pointer will be the initial State for its internal State Machine.
-Please refer to the DeferalExample example to get a feel of this feature.
+Please refer to the CompositeExample example to get a feel of this feature.
 ===================================================================================
 Deferal of events:
 Its is also possible to defer an event to the next state. If the current state knows that the current event may be relavant in one of the next states it might make sense to defer it to be handled after the next transition. Whenever a transition takes place, the events in the deferal queue are processed in FIFO order by the state machine before processing any new events. As a real life analogy, in many cameras, if user clicks while the camera is still trying to set focus, the software does nothing at the moment but automatically takes a shot as soons as the focus is set.
 So the "click" event was deferred while in "Focussing" state as it was relavant in the next "Focussed" state and was eventually processed.
 
 To achieve this, the event handler must FSM::defer in the respective Event handler to defer an event to the next state.
-
+Please refer to the DeferalExample example to get a feel of this feature.
 ===================================================================================
 Examples:
 Please refer to the example code snippets in the "examples" directory to see coding examples.
