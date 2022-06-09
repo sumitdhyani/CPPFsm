@@ -1,6 +1,10 @@
 #pragma once
 #include "Common.h"
 
+//State machines with composite/nested states can be a new concept to many.
+//If that's the case with you, it is encouraged to see the pictorial representation of the
+//State machine(Composite_state_machine.png) represented by this code to better understand it. 
+
 struct eTerminate : EvtBase {};
 
 struct e1 : EvtBase {};
