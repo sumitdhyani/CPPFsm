@@ -1,36 +1,36 @@
 #include "StopWatch.h"
 #include <thread>
 
-State* Stopped::process(const EvtStart& evt)
+Transition Stopped::process(const EvtStart& evt)
 {
-	return new Running();
+	return std::make_unique<Running>();
 }
 
-State* Stopped::process(const EvtSwitchOff& evt)
+Transition Stopped::process(const EvtSwitchOff& evt)
 {
-	return new SwitchedOff();
+	return std::make_unique<SwitchedOff>();
 }
 
-State* Running::process(const EvtStop& evt)
+Transition Running::process(const EvtStop& evt)
 {
-	return new Stopped();
+	return std::make_unique<Stopped>();
 }
 
-State* Running::process(const EvtLap& evt)
+Transition Running::process(const EvtLap& evt)
 {
 	m_lap++;
 	std::cout << "Stopwatch lap " << m_lap << ", time : " << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - m_initTime).count() << " sec" << std::endl;
-    return nullptr;
+    return Specialtransition::nulltransition;
 }
 
-State* Running::process(const EvtSwitchOff& evt)
+Transition Running::process(const EvtSwitchOff& evt)
 {
-	return new SwitchedOff();
+	return std::make_unique<SwitchedOff>();
 }
 
 int main(int argc, char** argv)
 {
-    FSM stopWatch([]() {return new Stopped(); });
+    FSM stopWatch([]() {return std::make_unique<Stopped>(); });
     stopWatch.start();
     int sleepInterval = 1;
     try

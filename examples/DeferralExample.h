@@ -15,29 +15,29 @@ struct displayImage : EvtBase
 
 struct Focused : NonFinalState, IEventProcessor<click>, IEventProcessor<buttonReleased>
 {
-	State* process(const click& click);
-	State* process(const buttonReleased& click);
+	Transition process(const click& click);
+	Transition process(const buttonReleased& click);
 };
 
 struct Focusing : NonFinalState, IEventProcessor<focused>, IEventProcessor<click>
 {
-	State* process(const focused& evt);
-	State* process(const click& evt);
+	Transition process(const focused& evt);
+	Transition process(const click& evt);
 };
 
 struct Idle : NonFinalState, IEventProcessor<focus>
 {
-	State* process(const focus& evt);
+	Transition process(const focus& evt);
 };
 
 struct Browsing : NonFinalState, IEventProcessor<shoot>, IEventProcessor<displayImage>
 {
-	State* process(const shoot& evt);
-	State* process(const displayImage& evt);
+	Transition process(const shoot& evt);
+	Transition process(const displayImage& evt);
 };
 
 struct Shooting : CompositeStateBase, IEventProcessor<browse>
 {
-	Shooting() : CompositeStateBase([]() {return new Idle(); }) {}
-	State* process(const browse& evt);
+	Shooting() : CompositeStateBase([]() {return std::make_unique<Idle>(); }) {}
+	Transition process(const browse& evt);
 };

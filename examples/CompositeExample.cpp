@@ -1,38 +1,38 @@
 #include "CompositeExample.h"
 
-State* SC1::process(const e1& evt)
+Transition SC1::process(const e1& evt)
 {
 	std::cout << "Recieved evt: " << evt.description() << std::endl;
-	return new SC2();
+	return std::make_unique<SC2>();
 }
 
-State* SC2::process(const e2& evt)
+Transition SC2::process(const e2& evt)
 {
 	std::cout << "Recieved evt: " << evt.description() << std::endl;
-	return new SC1();
+	return std::make_unique<SC1>();
 }
 
-State* SC2::process(const eTerminate& evt)
+Transition SC2::process(const eTerminate& evt)
 {
 	std::cout << "Recieved evt: " << evt.description() << std::endl;
-	return new STerminated();
+	return std::make_unique<STerminated>();
 }
 
-State* SC11::process(const e11& evt)
+Transition SC11::process(const e11& evt)
 {
 	std::cout << "Recieved evt: " << evt.description() << std::endl;
-	return new SC12();
+	return std::make_unique<SC12>();
 }
 
-State* SC21::process(const e21& evt)
+Transition SC21::process(const e21& evt)
 {
 	std::cout << "Recieved evt: " << evt.description() << std::endl;
-	return new SC22();
+	return std::make_unique<SC22>();
 }
 
 int main(int argc, char** argv)
 {
-	FSM fsm([]() { return new SC1(); }, [](std::string desc) { std::cout << "Recieved unhandled evt: " << desc << std::endl; } );
+	FSM fsm([]() { return std::make_unique<SC1>(); }, [](std::string desc) { std::cout << "Recieved unhandled evt: " << desc << std::endl; } );
 	fsm.start();
 	try
 	{

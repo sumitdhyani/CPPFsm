@@ -42,7 +42,7 @@ struct StateBase : State
 
 struct CompositeStateBase : CompositeState
 {
-    CompositeStateBase(std::function<State*()> fn) : CompositeState(fn) {}
+    CompositeStateBase(std::function<std::unique_ptr<State>()> fn) : CompositeState(fn) {}
     
     virtual void onEntry()
 	{

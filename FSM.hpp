@@ -1,6 +1,7 @@
 #include <memory>
 #include <functional>
 #include <queue>
+#include <variant>
 
 struct FinalityReachedException : std::runtime_error
 {
@@ -17,6 +18,13 @@ struct SMInactiveException : std::runtime_error
 	SMInactiveException() : std::runtime_error("State machine needs to be started by calling the start() method") {}
 };
 
+
+enum class Specialtransition
+{
+	nulltransition,
+	deferralTransition
+};
+
 struct State
 {
 	State(bool isFinal) : m_isFinal(isFinal)
@@ -25,26 +33,25 @@ struct State
 	virtual void beforeExit() {};
 	bool isFinal(){	return m_isFinal; }
 	virtual ~State() {}
-protected:
-	inline static State* defer = reinterpret_cast<State*>(2);
 private:
 	bool m_isFinal;
 };
 
+typedef std::variant<std::unique_ptr<State>, Specialtransition> Transition;
+
 template<typename EvtType>
 struct IEventProcessor
 {
-	virtual State* process(const EvtType& arg) = 0;
+	virtual Transition process(const EvtType& arg) = 0;
 };
 
 struct FSM
 {
-	FSM(std::function<State* ()> fn, 
-		std::function<void(std::string)> unconsumedEventHandler = [](std::string desc) {},
-		std::function<void(State*)> deleter = [](State* state) {delete state; }
-		) : m_currState(fn()), m_unconsumedEventHandler(unconsumedEventHandler), m_deleter(deleter), m_started(false)
+	FSM(std::function<std::unique_ptr<State> ()> fn, 
+		std::function<void(std::string)> unconsumedEventHandler = [](std::string desc) {}
+		) : m_currState(fn()), m_unconsumedEventHandler(unconsumedEventHandler), m_started(false)
 	{}
-	
+
 	template<typename EventType>
 	void handleEvent(const EventType& evt)
 	{
@@ -57,44 +64,60 @@ struct FSM
 		if (m_currState->isFinal())
 			throw FinalityReachedException();
 		else
-			handleStateEntry(m_currState);
+			handleStateEntry(*m_currState);
 	}
 
-	virtual ~FSM() { m_deleter(m_currState); }
-
-	inline static State* defer = reinterpret_cast<State*>(2);
+	virtual ~FSM() { }
 protected:
-	State* m_currState;
+	std::unique_ptr<State> m_currState;
 private:
 
-	inline static State* unhandledTransition = reinterpret_cast<State*>(1);
 	bool m_started;
 	std::function<void(std::string)> m_unconsumedEventHandler;
 	std::function<void(State*)> m_deleter;
 	std::queue<std::function<void()>> m_deferralQueue;
 
 	template<typename EventType>
-	State* onEvent(const EventType& evt)
+	Specialtransition onEvent(const EventType& evt)
 	{
 		if (!m_started)
 			throw SMInactiveException();
 		else if (m_currState->isFinal())
 			throw FinalityReachedException();
 
-		auto transition = findNextState(evt);
-		if (unhandledTransition == transition)
-			onUnconsumedEvent(evt);
-		else if (defer == transition)
-			m_deferralQueue.push([this, evt]() { handleEvent(evt); });
-		else if (nullptr != transition)
+		try
 		{
-			handleStateExit(m_currState);
-			m_deleter(m_currState);
-			m_currState = transition;
-			handleStateEntry(m_currState);
-		}
+			auto& evtProcessor = dynamic_cast<IEventProcessor<EventType>&>(*m_currState);
+			Transition transition = evtProcessor.process(evt);
+			try
+			{
+				auto nextState = std::move(std::get<std::unique_ptr<State>>(transition));
+				handleStateExit(*m_currState);
+				m_currState = std::move(nextState);
+				handleStateEntry(*m_currState);
+			}
+			catch(std::bad_variant_access)
+			{
+				if (Specialtransition::deferralTransition == std::get<Specialtransition>(transition))
+					m_deferralQueue.push([this, evt]() { handleEvent(evt); });
+			}
 
-		return transition;
+			return Specialtransition::nulltransition;
+		}
+		catch (std::bad_cast) {}
+
+		try
+		{
+			auto& childStateMachine = dynamic_cast<FSM&>(*m_currState);
+			return childStateMachine.onEvent(evt);
+		}
+		catch (std::bad_cast)
+		{
+			onUnconsumedEvent(evt);
+		}
+		catch (FinalityReachedException) {}
+
+		return Specialtransition::nulltransition;
 	}
 
 	void processDeferralQueue()
@@ -109,56 +132,28 @@ private:
 		}
 	}
 	
-	template<typename EventType>
-	State* findNextState(const EventType& evt)
+	void handleStateEntry(State& state)
 	{
+		state.onEntry();
 		try
 		{
-			auto& evtProcessor = dynamic_cast<IEventProcessor<EventType>&>(*m_currState);
-			return evtProcessor.process(evt);
-		}
-		catch (std::bad_cast) {}
-
-		//Us reaching here means that this is an unhandled event,
-		//we now need to check whether the current state is a composite state and if yes,
-		//then pass this event to its internal state machine
-		State* transition = unhandledTransition;
-		try
-		{
-			auto& childStateMachine = dynamic_cast<FSM&>(*m_currState);
-			transition = childStateMachine.onEvent(evt);
-		}
-		catch (std::bad_cast) {}
-		catch (FinalityReachedException) {}
-
-		if (unhandledTransition != transition)
-			transition = nullptr;
-		
-		return transition;
-	}
-
-	void handleStateEntry(State* state)
-	{
-		state->onEntry();
-		try
-		{
-			auto& childStateMachine = dynamic_cast<FSM&>(*state);
+			auto& childStateMachine = dynamic_cast<FSM&>(state);
 			childStateMachine.start();
 		}
 		catch (std::bad_cast) {}
 		processDeferralQueue();
 	}
 
-	void handleStateExit(State* state)
+	void handleStateExit(State& state)
 	{
 		try
 		{
-			auto& childStateMachine = dynamic_cast<FSM&>(*state);
-			handleStateExit(childStateMachine.m_currState);
+			auto& childStateMachine = dynamic_cast<FSM&>(state);
+			handleStateExit(*childStateMachine.m_currState);
 		}
 		catch (std::bad_cast) {}
 
-		state->beforeExit();
+		state.beforeExit();
 	}
 
 	template<typename EventType>
@@ -170,9 +165,8 @@ private:
 
 struct CompositeState : FSM, State
 {
-	CompositeState(	std::function<State* ()> fn, 
-					std::function<void(std::string)> unconsumedEventHandler = [](std::string desc) {},
-					std::function<void(State*)> deleter = [](State* state) {delete state; }
-				   ) : FSM(fn, unconsumedEventHandler, deleter), State(false)
+	CompositeState(	std::function<std::unique_ptr<State> ()> fn, 
+					std::function<void(std::string)> unconsumedEventHandler = [](std::string desc) {}
+				   ) : FSM(fn, unconsumedEventHandler), State(false)
 	{}
 };

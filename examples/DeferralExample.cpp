@@ -1,56 +1,58 @@
 #include "DeferralExample.h"
 
-State* Focused::process(const click& click)
+Transition Focused::process(const click& click)
 {
 	std::cout << "Image clicked" << std::endl;
-	return nullptr;
+	return Specialtransition::nulltransition;
 }
 
-State* Focused::process(const buttonReleased& click)
+Transition Focused::process(const buttonReleased& click)
 {
 	std::cout << "Image clicked" << std::endl;
-	return new Idle;
+	return std::make_unique<Idle>();
 }
 
-State* Focusing::process(const focused& evt)
+Transition Focusing::process(const focused& evt)
 {
-	return new Focused;
+	return std::make_unique<Focused>();
 }
 
-State* Focusing::process(const click& evt)
+Transition Focusing::process(const click& evt)
 {
-	return defer;
+	std::cout << "deferring the click event while in Focusing state." << std::endl;
+	return Specialtransition::deferralTransition;
 }
 
-State* Idle::process(const focus& evt)
+Transition Idle::process(const focus& evt)
 {
-	return new Focusing;
+	return std::make_unique<Focusing>();
 }
 
-State* Browsing::process(const shoot& evt)
+Transition Browsing::process(const shoot& evt)
 {
-	return new Shooting;
+	return std::make_unique<Shooting>();
 }
 
-State* Browsing::process(const displayImage& evt)
+Transition Browsing::process(const displayImage& evt)
 {
 	std::cout << "Display image, image name: " << evt.m_image << std::endl;
-	return nullptr;
+	return Specialtransition::nulltransition;
 }
 
 
-State* Shooting::process(const browse& evt)
+Transition Shooting::process(const browse& evt)
 {
-	return new Browsing;
+	return std::make_unique<Browsing>();
 }
 
 int main(int argc, char** argv)
 {
-	FSM fsm([]() {return new Shooting; });
+	FSM fsm([]() { return std::make_unique<Shooting>(); });
 	fsm.start();
 	try
 	{
 		fsm.handleEvent(focus());
+		fsm.handleEvent(click());
 		fsm.handleEvent(click());
 		fsm.handleEvent(focused());
 	}
