@@ -20,7 +20,7 @@ Transition Running::process(const EvtLap& evt)
 {
 	m_lap++;
 	std::cout << "Stopwatch lap " << m_lap << ", time : " << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - m_initTime).count() << " sec" << std::endl;
-    return Specialtransition::nulltransition;
+    return Specialtransition::nullTransition;
 }
 
 Transition Running::process(const EvtSwitchOff& evt)

@@ -21,7 +21,7 @@ struct SMInactiveException : std::runtime_error
 
 enum class Specialtransition
 {
-	nulltransition,
+	nullTransition,
 	deferralTransition
 };
 
@@ -102,7 +102,7 @@ private:
 					m_deferralQueue.push([this, evt]() { handleEvent(evt); });
 			}
 
-			return Specialtransition::nulltransition;
+			return Specialtransition::nullTransition;
 		}
 		catch (std::bad_cast) {}
 
@@ -117,7 +117,7 @@ private:
 		}
 		catch (FinalityReachedException) {}
 
-		return Specialtransition::nulltransition;
+		return Specialtransition::nullTransition;
 	}
 
 	void processDeferralQueue()

@@ -3,7 +3,7 @@
 Transition Focused::process(const click& click)
 {
 	std::cout << "Image clicked" << std::endl;
-	return Specialtransition::nulltransition;
+	return Specialtransition::nullTransition;
 }
 
 Transition Focused::process(const buttonReleased& click)
@@ -36,7 +36,7 @@ Transition Browsing::process(const shoot& evt)
 Transition Browsing::process(const displayImage& evt)
 {
 	std::cout << "Display image, image name: " << evt.m_image << std::endl;
-	return Specialtransition::nulltransition;
+	return Specialtransition::nullTransition;
 }
 
 
