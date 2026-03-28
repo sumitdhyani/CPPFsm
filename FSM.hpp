@@ -39,10 +39,10 @@ private:
 
 typedef std::variant<std::unique_ptr<State>, Specialtransition> Transition;
 
-template<typename EvtType>
+template<class... EvtType>
 struct IEventProcessor
 {
-	virtual Transition process(const EvtType& arg) = 0;
+	virtual Transition process(const EvtType&... arg) = 0;
 };
 
 struct FSM
@@ -52,10 +52,10 @@ struct FSM
 		) : m_currState(fn()), m_unconsumedEventHandler(unconsumedEventHandler), m_started(false)
 	{}
 
-	template<typename EventType>
-	void handleEvent(const EventType& evt)
+	template<class... EventType>
+	void handleEvent(const EventType&... evt)
 	{
-		onEvent(evt);
+		onEvent(evt...);
 	}
 
 	void start()
@@ -77,8 +77,8 @@ private:
 	std::function<void(State*)> m_deleter;
 	std::queue<std::function<void()>> m_deferralQueue;
 
-	template<typename EventType>
-	Specialtransition onEvent(const EventType& evt)
+	template<class... EventType>
+	Specialtransition onEvent(const EventType&... evt)
 	{
 		if (!m_started)
 			throw SMInactiveException();
@@ -87,8 +87,8 @@ private:
 
 		try
 		{
-			auto& evtProcessor = dynamic_cast<IEventProcessor<EventType>&>(*m_currState);
-			Transition transition = evtProcessor.process(evt);
+			auto& evtProcessor = dynamic_cast<IEventProcessor<EventType...>&>(*m_currState);
+			Transition transition = evtProcessor.process(evt...);
 			try
 			{
 				auto nextState = std::move(std::get<std::unique_ptr<State>>(transition));
@@ -99,7 +99,7 @@ private:
 			catch(std::bad_variant_access)
 			{
 				if (Specialtransition::deferralTransition == std::get<Specialtransition>(transition))
-					m_deferralQueue.push([this, evt]() { handleEvent(evt); });
+					m_deferralQueue.push([this, evt...]() { handleEvent(evt...); });
 			}
 
 			return Specialtransition::nullTransition;
@@ -109,11 +109,11 @@ private:
 		try
 		{
 			auto& childStateMachine = dynamic_cast<FSM&>(*m_currState);
-			return childStateMachine.onEvent(evt);
+			return childStateMachine.onEvent(evt...);
 		}
 		catch (std::bad_cast)
 		{
-			onUnconsumedEvent(evt);
+			onUnconsumedEvent(evt...);
 		}
 		catch (FinalityReachedException) {}
 
@@ -156,10 +156,10 @@ private:
 		state.beforeExit();
 	}
 
-	template<typename EventType>
-	void onUnconsumedEvent(const EventType& evt) noexcept
+	template<class... EventType>
+	void onUnconsumedEvent(const EventType&... evt) noexcept
 	{
-		m_unconsumedEventHandler(evt.description());
+		m_unconsumedEventHandler(evt.description()...);
 	}
 };
 
