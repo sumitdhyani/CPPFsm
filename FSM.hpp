@@ -43,6 +43,7 @@ template<class... EvtType>
 struct IEventProcessor
 {
 	virtual Transition process(const EvtType&... arg) = 0;
+	virtual ~IEventProcessor() = default;
 };
 
 struct FSM
@@ -123,6 +124,8 @@ private:
 	void processDeferralQueue()
 	{
 		std::queue<std::function<void()>> local;
+		// This weird swap is to avoid processing events added to the deferral
+		// queue while we are processing the deferral queue
 		local.swap(m_deferralQueue);
 		
 		while (!local.empty())
