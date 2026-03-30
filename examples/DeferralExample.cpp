@@ -45,9 +45,14 @@ Transition Shooting::process(const browse& evt)
 	return std::make_unique<Browsing>();
 }
 
+struct Fsm : ULFSM::FSM<Fsm>
+{
+	Fsm() : FSM<Fsm>([]() { return std::make_unique<Shooting>(); }) {}
+};
+
 int main(int argc, char** argv)
 {
-	FSM fsm([]() { return std::make_unique<Shooting>(); });
+	Fsm fsm;
 	fsm.start();
 	try
 	{

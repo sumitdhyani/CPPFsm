@@ -30,9 +30,15 @@ Transition SC21::process(const e21& evt)
 	return std::make_unique<SC22>();
 }
 
+
+struct Fsm : FSM<Fsm>
+{
+	Fsm() : FSM<Fsm>([]() { return std::make_unique<SC1>(); }) {}
+};
+
 int main(int argc, char** argv)
 {
-	FSM fsm([]() { return std::make_unique<SC1>(); }, [](std::string desc) { std::cout << "Recieved unhandled evt: " << desc << std::endl; } );
+	Fsm fsm;
 	fsm.start();
 	try
 	{

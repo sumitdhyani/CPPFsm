@@ -1,61 +1,75 @@
 #pragma once
+#include <iostream>
+#include <memory>
+#include <variant>
+#include <queue>
+#include <iostream>
+#include <functional>
 #include "Common.h"
 
-struct EvtStart : EvtBase {};
 
-struct EvtStop : EvtBase {};
+// =============================================
+// Concrete States
+// =============================================
 
-struct EvtSwitchOff : EvtBase {};
+/*
+    State transition overview of StopWatch
+            Start
+    Idle ---------> Running 
 
-struct EvtLap : EvtBase {};
+*/
 
-struct Stopped : StateBase, IEventProcessor<EvtStart>, IEventProcessor<EvtSwitchOff>
+struct Start {};
+struct Stop {};
+struct Reset {};
+struct SwitchOff {};
+struct SwitchOn {};
+struct Lap {};
+
+struct Idle final : StateBase,
+    IEventProcessor<Start>,
+    IEventProcessor<SwitchOff>
 {
-	Stopped() : StateBase(false) {}
+    Idle() : StateBase(false) {}
 
-    virtual void onEntry()
-    {
-        std::cout << "Stopwatch stopped state at: " << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()) << std::endl;
-    }
-
-    virtual void beforeExit()
-    {
-        std::cout << "Stopwatch leaving stopped state at: " << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()) << std::endl;
-    }
-
-    virtual Transition process(const EvtStart& evt);
-    virtual Transition process(const EvtSwitchOff& evt);
+    Transition process(const Start&) override;
+    Transition process(const SwitchOff&) override;
 };
 
-struct Running: StateBase, IEventProcessor<EvtStop>, IEventProcessor<EvtSwitchOff>, IEventProcessor<EvtLap>
+struct SwitchedOff : StateBase
 {
-	Running() : StateBase(false), m_lap(0), m_initTime(std::chrono::system_clock::now()) {}
+    SwitchedOff() : StateBase(true) {}
+};
 
-    virtual void onEntry()
-    {
-        std::cout << "Stopwatch running state at: " << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()) << std::endl;
-    }
+struct Stopped final : StateBase,
+    IEventProcessor<Start>,
+    IEventProcessor<SwitchOff>,
+    IEventProcessor<Reset>
+{
+    Stopped() : StateBase(false) {}
 
-    virtual void beforeExit()
-    {
-        std::cout << "Stopwatch leaving running state at: " << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()) << std::endl;
-    }
+    Transition process(const Start& evt) override;
+    Transition process(const SwitchOff& evt) override;
+    Transition process(const Reset& evt) override;
+};
 
-    virtual Transition process(const EvtStop& evt);
-    virtual Transition process(const EvtSwitchOff& evt);
-    virtual Transition process(const EvtLap& evt);
+struct Running final : StateBase,
+    IEventProcessor<Stop>,
+    IEventProcessor<Lap>,
+    IEventProcessor<SwitchOff>,
+    IEventProcessor<Reset>
+{
+    Running() : StateBase(false), m_lap(0), m_initTime(std::chrono::system_clock::now()) {}
+
+    Transition process(const Stop& evt) override;
+    Transition process(const Lap& evt) override;
+    Transition process(const SwitchOff& evt) override;
+    Transition process(const Reset& evt) override;
 private:
     int m_lap;
     std::chrono::time_point<std::chrono::system_clock> m_initTime;
 };
 
 
-struct SwitchedOff : StateBase
-{
-	SwitchedOff() : StateBase(true) {}
 
-    virtual void onEntry()
-    {
-        std::cout << "Stopwatch switchedOff state at: " << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()) << std::endl;
-    }
-};
+

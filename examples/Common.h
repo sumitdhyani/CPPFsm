@@ -6,11 +6,19 @@
 #include <FSM.hpp>
 #include <string>
 #include <typeinfo>
+using State = ULFSM::State;
+using CompositeState = ULFSM::CompositeState;
+using FinalityReachedException = ULFSM::FinalityReachedException;
+using NullStateException = ULFSM::NullStateException;
+using SMInactiveException = ULFSM::SMInactiveException;
+using Transition = ULFSM::Transition;
+using Specialtransition = ULFSM::Specialtransition;
 
-//struct FSMBase : FSM
-//{
-//    std::string typeof(FSM);
-//};
+template <class... EvtTypes>
+using IEventProcessor = ULFSM::IEventProcessor<EvtTypes...>;
+
+template <class Derived>
+using FSM = ULFSM::FSM<Derived>;
 
 struct EvtBase
 {
@@ -24,6 +32,7 @@ struct EvtBase
 private:
     std::string m_name;
 };
+
 
 struct StateBase : State
 {

@@ -1,13 +1,13 @@
 #include "Common.h"
 
-struct focus : EvtBase {};
-struct focused : EvtBase {};
-struct browse : EvtBase {};
-struct shoot : EvtBase {};
-struct click : EvtBase {};
-struct buttonReleased : EvtBase {};
+struct focus {};
+struct focused {};
+struct browse {};
+struct shoot {};
+struct click {};
+struct buttonReleased {};
 
-struct displayImage : EvtBase
+struct displayImage
 {
 	std::string m_image;
 	displayImage(std::string image) : m_image(image){ }
