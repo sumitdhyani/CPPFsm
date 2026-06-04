@@ -50,7 +50,7 @@ typedef std::variant<std::unique_ptr<State>, Specialtransition> Transition;
 template<class... EvtType>
 struct IEventProcessor
 {
-	virtual Transition process(const EvtType&... arg) = 0;
+	virtual Transition process(const EvtType... arg) = 0;
 	virtual ~IEventProcessor() = default;
 };
 
